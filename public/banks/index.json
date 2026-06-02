@@ -1,0 +1,11 @@
+{
+  "banks": [
+    {
+      "exam_code": "H12-811",
+      "cert": "HCIA-Datacom",
+      "version": "V1.0",
+      "file": "/banks/H12-811.json",
+      "description": "HCIA-Datacom V1.0 — 445 Questions"
+    }
+  ]
+}
