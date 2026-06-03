@@ -22,7 +22,7 @@ export default function Exam() {
 
   if (!session) return null
 
-  const { questions, answers, bookmarks, questionStates, currentIndex, startTime, durationSeconds, examCode, cert } = session
+  const { questions, answers, bookmarks, questionStates, currentIndex, startTime, durationSeconds, examCode, cert, questionNumberOffset = 0 } = session
   const q = questions[currentIndex]
   const answeredCount = Object.values(answers).filter((a) => a.length > 0).length
   const unansweredCount = questions.length - answeredCount
@@ -60,7 +60,7 @@ export default function Exam() {
       {/* Top bar */}
       <header className="flex items-center justify-between border-b bg-white px-4 py-3 shadow-sm">
         <span className="text-sm font-semibold text-gray-700">
-          {currentIndex + 1} / {questions.length}
+          {questionNumberOffset + currentIndex + 1} / {questionNumberOffset + questions.length}
         </span>
         <div className="flex items-center gap-2">
           <TimerBadge
@@ -106,6 +106,7 @@ export default function Exam() {
             questionStates={questionStates}
             currentIndex={currentIndex}
             onSelect={setCurrentIndex}
+            numberOffset={questionNumberOffset}
           />
         </aside>
 
@@ -116,7 +117,7 @@ export default function Exam() {
               question={q}
               selectedAnswers={answers[q.id] || []}
               onAnswer={(labels) => setAnswer(q.id, labels)}
-              questionNumber={currentIndex + 1}
+              questionNumber={questionNumberOffset + currentIndex + 1}
             />
           </div>
         </main>
@@ -138,7 +139,7 @@ export default function Exam() {
           onClick={() => setShowNavModal(true)}
           className="flex-1 rounded-lg border border-gray-300 py-2 text-center text-sm font-medium text-gray-600 hover:bg-gray-50 lg:hidden"
         >
-          📋 Soal {currentIndex + 1}/{questions.length}
+          📋 Soal {questionNumberOffset + currentIndex + 1}/{questionNumberOffset + questions.length}
         </button>
 
         {/* Next */}

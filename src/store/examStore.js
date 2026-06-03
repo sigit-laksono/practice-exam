@@ -8,7 +8,7 @@ import { create } from 'zustand'
 export const useExamStore = create((set, get) => ({
   session: null,
 
-  startSession: ({ examCode, cert, questions, durationSeconds }) => {
+  startSession: ({ examCode, cert, questions, durationSeconds, questionNumberOffset = 0 }) => {
     const states = {}
     questions.forEach((q) => {
       states[q.id] = 'unanswered'
@@ -26,6 +26,7 @@ export const useExamStore = create((set, get) => ({
         durationSeconds,
         submitted: false,
         result: null,
+        questionNumberOffset, // nomor soal pertama di bank (0-indexed)
       },
     })
   },

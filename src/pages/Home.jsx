@@ -135,12 +135,14 @@ export default function Home() {
       if (questions.length === 0) return
     }
 
+    let questionNumberOffset = 0
     const rangeMatch = questionCount.trim().match(/^(\d+)\s*-\s*(\d+)$/)
     if (rangeMatch) {
       // Format range: "51-100" → ambil soal ke-51 sampai ke-100 (1-indexed)
       const from = Math.max(1, parseInt(rangeMatch[1])) - 1
       const to = parseInt(rangeMatch[2])
       questions = [...questions].slice(from, to)
+      questionNumberOffset = from  // soal pertama = nomor from+1
       if (shuffle) questions = questions.sort(() => Math.random() - 0.5)
     } else if (questionCount && parseInt(questionCount) > 0) {
       // Format angka: "50" → ambil 50 soal pertama (atau acak kalau shuffle)
@@ -159,6 +161,7 @@ export default function Home() {
       cert: bank.meta.cert,
       questions,
       durationSeconds: timerMins * 60,
+      questionNumberOffset,
     })
     navigate('/exam')
   }

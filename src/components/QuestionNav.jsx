@@ -1,4 +1,4 @@
-export default function QuestionNav({ questions, questionStates, currentIndex, onSelect }) {
+export default function QuestionNav({ questions, questionStates, currentIndex, onSelect, numberOffset = 0 }) {
   return (
     <div className="flex flex-wrap gap-1.5 p-3">
       {questions.map((q, i) => {
@@ -22,7 +22,7 @@ export default function QuestionNav({ questions, questionStates, currentIndex, o
 
         return (
           <button key={q.id} className={cls} onClick={() => onSelect(i)}>
-            {i + 1}
+            {numberOffset + i + 1}
           </button>
         )
       })}
