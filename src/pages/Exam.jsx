@@ -18,6 +18,7 @@ export default function Exam() {
   const addAttempt = useHistoryStore((s) => s.addAttempt)
   const [showConfirm, setShowConfirm] = useState(false)
   const [showNavModal, setShowNavModal] = useState(false)
+  const [paused, setPaused] = useState(false)
 
   if (!session) return null
 
@@ -56,11 +57,25 @@ export default function Exam() {
         <span className="text-sm font-semibold text-gray-700">
           {currentIndex + 1} / {questions.length}
         </span>
-        <TimerBadge
-          durationSeconds={durationSeconds}
-          startTime={startTime}
-          onExpire={handleSubmit}
-        />
+        <div className="flex items-center gap-2">
+          <TimerBadge
+            durationSeconds={durationSeconds}
+            startTime={startTime}
+            onExpire={handleSubmit}
+            paused={paused}
+          />
+          <button
+            onClick={() => setPaused((v) => !v)}
+            title={paused ? 'Lanjutkan ujian' : 'Pause ujian'}
+            className={`rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors ${
+              paused
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {paused ? '▶ Lanjut' : '⏸'}
+          </button>
+        </div>
         <button
           onClick={() => toggleBookmark(q.id)}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -138,6 +153,25 @@ export default function Exam() {
           ✓ <span className="hidden sm:inline">Submit</span>
         </button>
       </footer>
+
+      {/* Pause overlay */}
+      {paused && (
+        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-gray-900/90 backdrop-blur-sm">
+          <div className="rounded-2xl bg-white px-10 py-10 text-center shadow-2xl">
+            <div className="mb-3 text-5xl">⏸</div>
+            <h2 className="mb-1 text-2xl font-bold text-gray-900">Ujian Dijeda</h2>
+            <p className="mb-6 text-sm text-gray-500">
+              Timer berhenti. Soal disembunyikan.<br />Tekan Lanjutkan untuk melanjutkan ujian.
+            </p>
+            <button
+              onClick={() => setPaused(false)}
+              className="w-full rounded-xl bg-blue-600 py-3 text-base font-semibold text-white hover:bg-blue-700 active:scale-95 transition-transform"
+            >
+              ▶ Lanjutkan Ujian
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile nav modal */}
       {showNavModal && (
