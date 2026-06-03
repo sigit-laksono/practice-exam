@@ -40,6 +40,22 @@ export default function Result() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
+      {/* Top nav */}
+      <div className="mb-4 flex items-center justify-between">
+        <button
+          onClick={() => { clearSession(); navigate('/') }}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          ← Home
+        </button>
+        <button
+          onClick={handleRetake}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          🔄 Ulangi Ujian
+        </button>
+      </div>
+
       {/* Score summary */}
       <div className={`mb-6 rounded-xl p-6 text-white shadow-lg ${passed ? 'bg-green-600' : 'bg-red-500'}`}>
         <div className="mb-1 text-sm font-medium opacity-80">{cert} — {examCode}</div>

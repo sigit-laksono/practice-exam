@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useBankStore } from '../store/bankStore'
 import { useExamStore } from '../store/examStore'
@@ -14,6 +14,13 @@ export default function Home() {
   const history = useHistoryStore((s) => s.history)
 
   const [selectedCode, setSelectedCode] = useState(() => Object.keys(banks)[0] || '')
+
+  // IndexedDB load async — set selectedCode setelah bank tersedia
+  useEffect(() => {
+    if (!selectedCode && Object.keys(banks).length > 0) {
+      setSelectedCode(Object.keys(banks)[0])
+    }
+  }, [banks])
   const [questionCount, setQuestionCount] = useState('')
   const [timerMins, setTimerMins] = useState(60)
   const [selectedTopics, setSelectedTopics] = useState([])
@@ -128,7 +135,15 @@ export default function Home() {
       if (questions.length === 0) return
     }
 
-    if (questionCount && parseInt(questionCount) > 0) {
+    const rangeMatch = questionCount.trim().match(/^(\d+)\s*-\s*(\d+)$/)
+    if (rangeMatch) {
+      // Format range: "51-100" → ambil soal ke-51 sampai ke-100 (1-indexed)
+      const from = Math.max(1, parseInt(rangeMatch[1])) - 1
+      const to = parseInt(rangeMatch[2])
+      questions = [...questions].slice(from, to)
+      if (shuffle) questions = questions.sort(() => Math.random() - 0.5)
+    } else if (questionCount && parseInt(questionCount) > 0) {
+      // Format angka: "50" → ambil 50 soal pertama (atau acak kalau shuffle)
       const n = parseInt(questionCount)
       questions = shuffle
         ? [...questions].sort(() => Math.random() - 0.5).slice(0, n)
@@ -302,15 +317,13 @@ export default function Home() {
               <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-gray-600">
-                    Jumlah Soal (kosong = semua)
+                    Jumlah Soal
                   </label>
                   <input
-                    type="number"
-                    min="1"
-                    max={bank.questions.length}
+                    type="text"
                     value={questionCount}
                     onChange={(e) => setQuestionCount(e.target.value)}
-                    placeholder={`Max ${bank.questions.length}`}
+                    placeholder={`Contoh: 50 atau 51-100`}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
                 </div>
