@@ -9,8 +9,10 @@ export const useHistoryStore = create(
       history: [],
 
       addAttempt: (attempt) => {
+        // Tambahkan id unik supaya bisa di-lookup nanti
+        const record = { ...attempt, id: Date.now() }
         set((s) => {
-          const next = [attempt, ...s.history].slice(0, MAX_HISTORY)
+          const next = [record, ...s.history].slice(0, MAX_HISTORY)
           return { history: next }
         })
       },

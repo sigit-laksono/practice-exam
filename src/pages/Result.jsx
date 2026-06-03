@@ -13,6 +13,7 @@ export default function Result() {
 
   if (!session || !session.result) return null
 
+  const isHistoryReview = session.submitted && !session.isLive
   const { questions, answers, bookmarks, result, cert, examCode } = session
   const { score, correct, wrong, total, details } = result
   const passed = score >= PASS_THRESHOLD
@@ -100,17 +101,26 @@ export default function Result() {
 
       {/* Actions */}
       <div className="flex gap-3">
-        <button
-          onClick={handleRetake}
-          className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-        >
-          Ulangi Ujian
-        </button>
+        {!session.submitted || session.isLive ? (
+          <button
+            onClick={handleRetake}
+            className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Ulangi Ujian
+          </button>
+        ) : (
+          <button
+            onClick={handleRetake}
+            className="flex-1 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            Ulangi Ujian
+          </button>
+        )}
         <button
           onClick={() => { clearSession(); navigate('/') }}
           className="flex-1 rounded-lg border border-gray-300 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
-          Kembali ke Home
+          ← Kembali ke Home
         </button>
       </div>
     </div>

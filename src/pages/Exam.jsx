@@ -41,6 +41,11 @@ export default function Exam() {
       timestamp: Date.now(),
       duration_seconds: durationSeconds2,
       passed,
+      // Data untuk review detail
+      questionIds: questions.map((q) => q.id),
+      answers: { ...answers },
+      bookmarks: [...bookmarks],
+      details: result.details,
     })
     navigate('/result')
   }

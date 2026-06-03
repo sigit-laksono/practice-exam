@@ -95,4 +95,41 @@ export const useExamStore = create((set, get) => ({
   },
 
   clearSession: () => set({ session: null }),
+
+  // Load ulang hasil ujian dari historyStore untuk ditampilkan di Result page
+  loadHistoryReview: (attempt, questions) => {
+    const detailMap = {}
+    ;(attempt.details || []).forEach((d) => { detailMap[d.id] = d })
+
+    const questionStates = {}
+    const bookmarkSet = new Set(attempt.bookmarks || [])
+    questions.forEach((q) => {
+      const hasAnswer = attempt.answers?.[q.id]?.length > 0
+      questionStates[q.id] = bookmarkSet.has(q.id)
+        ? 'bookmarked'
+        : hasAnswer ? 'answered' : 'unanswered'
+    })
+
+    set({
+      session: {
+        examCode: attempt.exam_code,
+        cert: attempt.cert,
+        questions,
+        answers: attempt.answers || {},
+        bookmarks: bookmarkSet,
+        questionStates,
+        currentIndex: 0,
+        startTime: Date.now() - (attempt.duration_seconds || 0) * 1000,
+        durationSeconds: attempt.duration_seconds || 3600,
+        submitted: true,
+        result: {
+          correct: attempt.correct,
+          wrong: attempt.total - attempt.correct,
+          total: attempt.total,
+          score: attempt.score,
+          details: attempt.details || [],
+        },
+      },
+    })
+  },
 }))

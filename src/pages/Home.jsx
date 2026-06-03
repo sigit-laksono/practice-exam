@@ -10,6 +10,7 @@ export default function Home() {
   const navigate = useNavigate()
   const { banks, importBank, removeBank } = useBankStore()
   const startSession = useExamStore((s) => s.startSession)
+  const loadHistoryReview = useExamStore((s) => s.loadHistoryReview)
   const history = useHistoryStore((s) => s.history)
 
   const [selectedCode, setSelectedCode] = useState(() => Object.keys(banks)[0] || '')
@@ -155,6 +156,23 @@ export default function Home() {
   })()
 
   const bankList = Object.values(banks)
+
+  function handleViewDetail(attempt) {
+    const bank = banks[attempt.exam_code]
+    if (!bank) {
+      alert(`Bank soal "${attempt.exam_code}" tidak ditemukan. Import ulang bank soal untuk melihat detail.`)
+      return
+    }
+    if (!attempt.questionIds || attempt.questionIds.length === 0) {
+      alert('Data detail tidak tersedia untuk ujian ini (ujian lama). Hasil ujian berikutnya akan bisa dilihat detailnya.')
+      return
+    }
+    const questions = attempt.questionIds
+      .map((id) => bank.questions.find((q) => q.id === id))
+      .filter(Boolean)
+    loadHistoryReview(attempt, questions)
+    navigate('/result')
+  }
 
   function handleExportForDeploy() {
     if (!bank) return
@@ -449,22 +467,48 @@ export default function Home() {
       {/* History */}
       {history.length > 0 && (
         <section>
-          <h2 className="mb-3 font-semibold text-gray-800">Riwayat Terakhir</h2>
+          <h2 className="mb-3 font-semibold text-gray-800">Riwayat Ujian</h2>
           <div className="space-y-2">
-            {history.slice(0, 5).map((h, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg bg-white px-4 py-3 shadow-sm">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{h.cert} — {h.exam_code}</p>
-                  <p className="text-xs text-gray-500">{new Date(h.timestamp).toLocaleString('id-ID')}</p>
+            {history.slice(0, 10).map((h, i) => {
+              const mins = Math.floor((h.duration_seconds || 0) / 60)
+              const secs = (h.duration_seconds || 0) % 60
+              const hasDetail = h.questionIds && h.questionIds.length > 0
+              return (
+                <div key={h.id || i} className="rounded-lg bg-white px-4 py-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800">{h.cert} — {h.exam_code}</p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(h.timestamp).toLocaleString('id-ID')} · {mins}m {String(secs).padStart(2,'0')}s
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className={`text-sm font-bold ${h.passed ? 'text-green-600' : 'text-red-600'}`}>
+                        {h.score}% {h.passed ? '✓ LULUS' : '✗ GAGAL'}
+                      </p>
+                      <p className="text-xs text-gray-500">{h.correct}/{h.total} benar</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    {/* Mini progress bar */}
+                    <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${h.passed ? 'bg-green-400' : 'bg-red-400'}`}
+                        style={{ width: `${h.score}%` }}
+                      />
+                    </div>
+                    <button
+                      onClick={() => handleViewDetail(h)}
+                      disabled={!hasDetail}
+                      title={hasDetail ? 'Lihat soal yang salah & benar' : 'Data detail tidak tersedia (ujian lama)'}
+                      className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                    >
+                      📊 Detail
+                    </button>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className={`text-sm font-bold ${h.passed ? 'text-green-600' : 'text-red-600'}`}>
-                    {h.score}% — {h.passed ? 'LULUS' : 'GAGAL'}
-                  </p>
-                  <p className="text-xs text-gray-500">{h.correct}/{h.total} benar</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </section>
       )}
