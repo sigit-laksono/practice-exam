@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
+  EyeOff,
   Flag,
   LayoutGrid,
+  Lock,
+  Maximize,
   Pause,
   Play,
   Send,
@@ -59,10 +62,14 @@ export default function Exam() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showNavModal, setShowNavModal] = useState(false)
   const [paused, setPaused] = useState(false)
+  const [distracted, setDistracted] = useState(false)
+  const [distractionCount, setDistractionCount] = useState(0)
+  const distractedRef = useRef(false)
+  const finishedRef = useRef(false)
 
   if (!session) return null
 
-  const { questions, answers, bookmarks, questionStates, currentIndex, startTime, durationSeconds, examCode, cert, questionNumberOffset = 0, practiceMode = false, revealed } = session
+  const { questions, answers, bookmarks, questionStates, currentIndex, startTime, durationSeconds, examCode, cert, questionNumberOffset = 0, practiceMode = false, focusLock = false, revealed } = session
   const q = questions[currentIndex]
   const answeredCount = Object.values(answers).filter((a) => a.length > 0).length
   const unansweredCount = questions.length - answeredCount
@@ -77,6 +84,11 @@ export default function Exam() {
   }
 
   function handleSubmit() {
+    // Tandai selesai dulu supaya keluar fullscreen tidak dihitung distraksi
+    finishedRef.current = true
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {})
+    }
     const result = scoreSession(questions, answers)
     const durationSeconds2 = Math.floor((Date.now() - startTime) / 1000)
     const passed = result.score >= 60
@@ -90,6 +102,7 @@ export default function Exam() {
       timestamp: Date.now(),
       duration_seconds: durationSeconds2,
       passed,
+      ...(focusLock && { distractions: distractionCount }),
       // Data untuk review detail
       questionIds: questions.map((q) => q.id),
       answers: { ...answers },
@@ -99,15 +112,52 @@ export default function Exam() {
     navigate('/result')
   }
 
+  // Focus Lock: keluar dari overlay distraksi & kembali ke fullscreen
+  function handleResumeFocus() {
+    distractedRef.current = false
+    setDistracted(false)
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {})
+    }
+  }
+
   function handleNavSelect(index) {
     setCurrentIndex(index)
     setShowNavModal(false)
   }
 
+  // Focus Lock: deteksi pindah tab (visibilitychange), pindah aplikasi (blur), dan keluar fullscreen
+  useEffect(() => {
+    if (!focusLock) return
+
+    function markDistracted() {
+      if (finishedRef.current || distractedRef.current) return
+      distractedRef.current = true
+      setDistracted(true)
+      setDistractionCount((c) => c + 1)
+    }
+
+    function onVisibility() {
+      if (document.hidden) markDistracted()
+    }
+    function onFullscreenChange() {
+      if (!document.fullscreenElement) markDistracted()
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('blur', markDistracted)
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('blur', markDistracted)
+      document.removeEventListener('fullscreenchange', onFullscreenChange)
+    }
+  }, [focusLock])
+
   // Keyboard shortcut (desktop): ←/→ pindah soal, 1-9 pilih opsi, B bookmark, Enter submit jawaban (practice)
   useEffect(() => {
     function onKey(e) {
-      if (showConfirm || showNavModal || paused) return
+      if (showConfirm || showNavModal || paused || distracted) return
       const tag = e.target.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
@@ -149,6 +199,12 @@ export default function Exam() {
           {practiceMode && (
             <Badge tone="emerald" className="hidden sm:inline-flex">
               <Target size={12} /> Practice
+            </Badge>
+          )}
+          {focusLock && (
+            <Badge tone={distractionCount > 0 ? 'rose' : 'indigo'} className="hidden sm:inline-flex">
+              <Lock size={12} />
+              {distractionCount > 0 ? `${distractionCount}× distraksi` : 'Focus Lock'}
             </Badge>
           )}
         </span>
@@ -300,6 +356,30 @@ export default function Exam() {
             </p>
             <Button size="lg" className="w-full" onClick={() => setPaused(false)}>
               <Play size={18} /> Lanjutkan Ujian
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Focus Lock overlay — muncul saat pindah tab/aplikasi atau keluar fullscreen */}
+      {distracted && (
+        <div className="fixed inset-0 z-50 flex animate-fade-in flex-col items-center justify-center bg-slate-950/80 px-4 backdrop-blur-xl">
+          <div className="w-full max-w-sm animate-scale-in rounded-3xl bg-white p-8 text-center shadow-2xl dark:bg-slate-900 dark:ring-1 dark:ring-slate-800">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+              <EyeOff size={30} />
+            </div>
+            <h2 className="mb-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
+              Kamu Terdistraksi!
+            </h2>
+            <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+              Kamu keluar dari ujian (pindah tab, buka aplikasi lain, atau keluar fullscreen).
+              Timer tetap berjalan — kembali fokus yuk.
+            </p>
+            <p className="mb-6 text-sm font-semibold text-rose-600 dark:text-rose-400">
+              Distraksi ke-{distractionCount} sesi ini
+            </p>
+            <Button size="lg" className="w-full" onClick={handleResumeFocus}>
+              <Maximize size={18} /> Kembali Fokus
             </Button>
           </div>
         </div>

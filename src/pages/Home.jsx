@@ -59,6 +59,7 @@ export default function Home() {
   const [selectedTopics, setSelectedTopics] = useState([])
   const [shuffle, setShuffle] = useState(false)
   const [practiceMode, setPracticeMode] = useState(false)
+  const [focusLock, setFocusLock] = useState(false)
   const [importError, setImportError] = useState(null)
   const [htmlImporting, setHtmlImporting] = useState(false)
   const [htmlMeta, setHtmlMeta] = useState(null)   // { files, detected }
@@ -197,7 +198,12 @@ export default function Home() {
       durationSeconds: timerMins * 60,
       questionNumberOffset,
       practiceMode,
+      focusLock,
     })
+    // Request fullscreen di sini (masih dalam user gesture klik tombol) — di Exam page sudah terlambat
+    if (focusLock && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {})
+    }
     navigate('/exam')
   }
 
@@ -278,6 +284,9 @@ export default function Home() {
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {timeAgo(h.timestamp)} · {mins}m {String(secs).padStart(2, '0')}s · {h.correct}/{h.total} benar
+                  {h.distractions > 0 && (
+                    <span className="text-rose-500 dark:text-rose-400"> · {h.distractions}× distraksi</span>
+                  )}
                 </p>
                 <div className="mt-1">
                   <Badge tone={h.passed ? 'emerald' : 'rose'}>
@@ -490,6 +499,13 @@ export default function Home() {
                     color="emerald"
                     label="Practice Mode"
                     description="Feedback benar/salah langsung per soal, tanpa timer"
+                  />
+                  <Toggle
+                    checked={focusLock}
+                    onChange={() => setFocusLock((v) => !v)}
+                    color="rose"
+                    label="Focus Lock"
+                    description="Fullscreen otomatis + peringatan kalau kamu pindah tab/aplikasi lain"
                   />
                 </div>
 

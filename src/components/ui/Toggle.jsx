@@ -1,6 +1,7 @@
 const COLORS = {
   indigo: 'bg-indigo-600',
   emerald: 'bg-emerald-600',
+  rose: 'bg-rose-600',
 }
 
 export default function Toggle({ checked, onChange, label, description, color = 'indigo' }) {
