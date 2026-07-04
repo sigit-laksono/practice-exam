@@ -450,8 +450,6 @@ export default function Home() {
                   )
                 })}
               </div>
-              <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
-              <input ref={htmlFileRef} type="file" accept=".html,.htm" multiple className="hidden" onChange={handleHtmlSelect} />
             </Card>
 
             {/* Config */}
@@ -635,6 +633,10 @@ export default function Home() {
 
       {/* Riwayat di bawah saat belum ada bank (mis. bank dihapus tapi riwayat masih ada) */}
       {bankList.length === 0 && <div className="mt-8">{historySection}</div>}
+
+      {/* Input file selalu ter-render — tombol import di empty state juga memakainya */}
+      <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+      <input ref={htmlFileRef} type="file" accept=".html,.htm" multiple className="hidden" onChange={handleHtmlSelect} />
     </div>
   )
 }
