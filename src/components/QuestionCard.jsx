@@ -1,10 +1,14 @@
+import { Lightbulb } from 'lucide-react'
 import OptionButton from './OptionButton'
 import ImageWithFallback from './ImageWithFallback'
+import Card from './ui/Card'
+import Badge from './ui/Badge'
 
-export default function QuestionCard({ question, selectedAnswers, onAnswer, questionNumber }) {
+export default function QuestionCard({ question, selectedAnswers, onAnswer, questionNumber, revealed = false }) {
   const selected = selectedAnswers || []
 
   function handleChange(label) {
+    if (revealed) return
     if (question.multi) {
       const next = selected.includes(label)
         ? selected.filter((l) => l !== label)
@@ -16,25 +20,21 @@ export default function QuestionCard({ question, selectedAnswers, onAnswer, ques
   }
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-sm font-semibold text-gray-400">Q{questionNumber}</span>
-        {question.topic && (
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-            {question.topic}
-          </span>
-        )}
-        {question.multi && (
-          <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-700">
-            Multi-answer
-          </span>
-        )}
+    <Card className="animate-slide-in p-5 sm:p-7">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-sm font-bold text-indigo-500 dark:text-indigo-400">
+          Soal {questionNumber}
+        </span>
+        {question.topic && <Badge tone="slate">{question.topic}</Badge>}
+        {question.multi && <Badge tone="violet">Multi-answer</Badge>}
       </div>
 
-      <p className="mb-4 text-base leading-relaxed text-gray-800">{question.text}</p>
+      <p className="mb-4 text-base leading-relaxed text-slate-800 dark:text-slate-100 lg:text-lg">
+        {question.text}
+      </p>
 
       {question.code_block && (
-        <pre className="mb-4 overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm text-green-300">
+        <pre className="mb-4 overflow-x-auto rounded-xl bg-slate-950 p-4 text-sm leading-relaxed text-emerald-300 ring-1 ring-slate-800">
           <code>{question.code_block}</code>
         </pre>
       )}
@@ -43,24 +43,41 @@ export default function QuestionCard({ question, selectedAnswers, onAnswer, ques
         <ImageWithFallback src={question.image} caption={question.image_caption} />
       )}
 
-      {question.image === null && (
-        <div className="my-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          ⚠ Soal ini mungkin memiliki diagram. Buka Editor untuk melampirkan gambar.
+      {question.image === null && <ImageWithFallback src={null} />}
+
+      <div className="mt-5 flex flex-col gap-2.5">
+        {question.options.map((opt) => {
+          const isSelected = selected.includes(opt.label)
+          const isCorrectOpt = question.answer.includes(opt.label)
+          let feedback = null
+          if (revealed) {
+            if (isCorrectOpt) feedback = 'correct'
+            else if (isSelected) feedback = 'incorrect'
+          }
+          return (
+            <OptionButton
+              key={opt.label}
+              label={opt.label}
+              text={opt.text}
+              selected={isSelected}
+              multi={question.multi}
+              onChange={() => handleChange(opt.label)}
+              feedback={feedback}
+              disabled={revealed}
+            />
+          )
+        })}
+      </div>
+
+      {revealed && question.explanation && (
+        <div className="mt-5 flex animate-slide-in gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm leading-relaxed text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200">
+          <Lightbulb size={18} className="mt-0.5 flex-shrink-0 text-indigo-500 dark:text-indigo-400" />
+          <div>
+            <span className="font-semibold">Penjelasan: </span>
+            {question.explanation}
+          </div>
         </div>
       )}
-
-      <div className="mt-4 flex flex-col gap-2">
-        {question.options.map((opt) => (
-          <OptionButton
-            key={opt.label}
-            label={opt.label}
-            text={opt.text}
-            selected={selected.includes(opt.label)}
-            multi={question.multi}
-            onChange={() => handleChange(opt.label)}
-          />
-        ))}
-      </div>
-    </div>
+    </Card>
   )
 }

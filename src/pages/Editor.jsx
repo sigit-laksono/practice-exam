@@ -1,6 +1,19 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  ArrowLeft,
+  ChevronLeft,
+  Download,
+  ImagePlus,
+  Save,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { useBankStore } from '../store/bankStore'
+import Button from '../components/ui/Button'
+import Badge from '../components/ui/Badge'
+import Toggle from '../components/ui/Toggle'
+import ThemeToggle from '../components/ThemeToggle'
 
 const MAX_IMAGE_B64_BYTES = 500 * 1024
 
@@ -8,6 +21,13 @@ export default function Editor() {
   const { banks, updateQuestion } = useBankStore()
   const [selectedCode, setSelectedCode] = useState(() => Object.keys(banks)[0] || '')
   const [selectedId, setSelectedId] = useState(null)
+
+  // IndexedDB load async — set selectedCode setelah bank tersedia (mis. buka /editor langsung)
+  useEffect(() => {
+    if (!selectedCode && Object.keys(banks).length > 0) {
+      setSelectedCode(Object.keys(banks)[0])
+    }
+  }, [banks])
   const [search, setSearch] = useState('')
   const [filterTopic, setFilterTopic] = useState('')
   const [saveMsg, setSaveMsg] = useState(null)
@@ -113,149 +133,187 @@ export default function Editor() {
 
   if (Object.keys(banks).length === 0) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-4 text-gray-500">
+      <div className="flex h-dvh flex-col items-center justify-center gap-4 px-4 text-center text-slate-500 dark:text-slate-400">
         <p>Belum ada bank soal. Import dulu dari halaman Home.</p>
-        <Link to="/" className="text-blue-600 hover:underline">← Kembali ke Home</Link>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 font-medium text-indigo-600 hover:underline dark:text-indigo-400"
+        >
+          <ArrowLeft size={16} /> Kembali ke Home
+        </Link>
       </div>
     )
   }
 
+  // Mobile: 2 langkah — list dulu, form setelah soal dipilih (tombol back di form)
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-dvh flex-col bg-slate-50 dark:bg-slate-950">
       {/* Top bar */}
-      <header className="flex items-center justify-between border-b bg-white px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">← Home</Link>
-          <h1 className="font-semibold text-gray-900">Editor Bank Soal</h1>
+      <header className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-3 py-2.5 dark:border-slate-800 dark:bg-slate-900 sm:px-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          >
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Home</span>
+          </Link>
+          <h1 className="hidden font-semibold text-slate-900 dark:text-slate-100 md:block">
+            Editor Bank Soal
+          </h1>
           <select
             value={selectedCode}
             onChange={(e) => { setSelectedCode(e.target.value); setSelectedId(null); setForm(null) }}
-            className="rounded border border-gray-300 px-2 py-1 text-sm"
+            className="field !w-auto !py-1.5"
+            aria-label="Pilih bank soal"
           >
             {Object.keys(banks).map((code) => (
               <option key={code} value={code}>{code}</option>
             ))}
           </select>
         </div>
-        <button
-          onClick={handleExport}
-          className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700"
-        >
-          Export JSON
-        </button>
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <Button size="sm" onClick={handleExport}>
+            <Download size={15} />
+            <span className="hidden sm:inline">Export JSON</span>
+          </Button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left panel: question list */}
-        <aside className="flex w-72 flex-col border-r bg-white">
-          <div className="border-b p-3 space-y-2">
-            <input
-              type="text"
-              placeholder="Cari teks soal..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
-            />
+        {/* Left panel: question list — di mobile disembunyikan saat form terbuka */}
+        <aside
+          className={`w-full flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:flex md:w-80 ${
+            form ? 'hidden' : 'flex'
+          }`}
+        >
+          <div className="space-y-2 border-b border-slate-200 p-3 dark:border-slate-800">
+            <div className="relative">
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari teks soal..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="field !pl-9"
+              />
+            </div>
             <select
               value={filterTopic}
               onChange={(e) => setFilterTopic(e.target.value)}
-              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+              className="field"
+              aria-label="Filter topik"
             >
               <option value="">Semua Topik</option>
               {allTopics.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
             {filteredQuestions.map((q) => (
               <button
                 key={q.id}
                 onClick={() => selectQuestion(q)}
-                className={`w-full border-b px-3 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 ${
-                  selectedId === q.id ? 'bg-blue-50' : ''
+                className={`w-full border-b border-slate-100 px-3.5 py-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-500 dark:border-slate-800/70 ${
+                  selectedId === q.id
+                    ? 'bg-indigo-50 dark:bg-indigo-500/10'
+                    : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
               >
-                <span className="font-semibold text-gray-500">#{q.id}</span>
-                {q.topic && <span className="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">{q.topic}</span>}
-                <p className="mt-0.5 line-clamp-2 text-gray-700">{q.text}</p>
+                <span className="font-semibold text-slate-500 dark:text-slate-400">#{q.id}</span>
+                {q.topic && <Badge tone="slate" className="ml-1.5">{q.topic}</Badge>}
+                <p className="mt-1 line-clamp-2 text-slate-700 dark:text-slate-300">{q.text}</p>
               </button>
             ))}
+            {filteredQuestions.length === 0 && (
+              <p className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">
+                Tidak ada soal yang cocok.
+              </p>
+            )}
           </div>
         </aside>
 
-        {/* Right panel: form */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+        {/* Right panel: form — di mobile tampil menggantikan list */}
+        <main className={`flex-1 overflow-y-auto p-4 sm:p-6 ${form ? 'block' : 'hidden md:block'}`}>
           {!form ? (
-            <div className="flex h-full items-center justify-center text-gray-400">
+            <div className="flex h-full items-center justify-center text-slate-400 dark:text-slate-500">
               Pilih soal dari daftar di sebelah kiri
             </div>
           ) : (
-            <div className="mx-auto max-w-2xl space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="mx-auto max-w-2xl space-y-5 pb-8">
+              {/* Back — mobile only */}
+              <button
+                onClick={() => { setForm(null); setSelectedId(null) }}
+                className="flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 md:hidden"
+              >
+                <ChevronLeft size={16} /> Kembali ke daftar soal
+              </button>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">ID (read-only)</label>
-                  <input value={form.id} readOnly className="w-full rounded border bg-gray-100 px-3 py-2 text-sm" />
+                  <label className="field-label">ID (read-only)</label>
+                  <input value={form.id} readOnly className="field !bg-slate-100 dark:!bg-slate-800" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Topik</label>
+                  <label className="field-label">Topik</label>
                   <input
                     value={form.topic}
                     onChange={(e) => setForm((f) => ({ ...f, topic: e.target.value }))}
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="field"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Teks Soal</label>
+                <label className="field-label">Teks Soal</label>
                 <textarea
                   value={form.text}
                   onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
                   rows={4}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="field"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Code Block (opsional)</label>
+                <label className="field-label">Code Block (opsional)</label>
                 <textarea
                   value={form.code_block}
                   onChange={(e) => setForm((f) => ({ ...f, code_block: e.target.value }))}
                   rows={3}
-                  className="w-full rounded border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                  className="field font-mono"
                   placeholder="CLI / config output..."
                 />
               </div>
 
               {/* Image */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Gambar</label>
+                <label className="field-label">Gambar</label>
                 {form.image ? (
                   <div className="mb-2">
                     <img
                       src={form.image}
                       alt="preview"
-                      className="max-h-48 rounded border border-gray-200 object-contain"
+                      className="max-h-48 rounded-xl border border-slate-200 object-contain dark:border-slate-700"
                     />
                   </div>
                 ) : (
-                  <div className="mb-2 rounded border border-dashed border-gray-300 p-4 text-center text-sm text-gray-400">
+                  <div className="mb-2 rounded-xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-400 dark:border-slate-700 dark:text-slate-500">
                     Tidak ada gambar
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => imageRef.current.click()}
-                    className="rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Upload Gambar
-                  </button>
+                  <Button variant="secondary" size="sm" onClick={() => imageRef.current.click()}>
+                    <ImagePlus size={15} /> Upload Gambar
+                  </Button>
                   {form.image && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="!text-rose-600 hover:!bg-rose-50 dark:!text-rose-400 dark:hover:!bg-rose-500/10"
                       onClick={() => setForm((f) => ({ ...f, image: '' }))}
-                      className="rounded border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
                     >
-                      Hapus Gambar
-                    </button>
+                      <Trash2 size={15} /> Hapus
+                    </Button>
                   )}
                 </div>
                 <input
@@ -270,42 +328,37 @@ export default function Editor() {
                     value={form.image_caption}
                     onChange={(e) => setForm((f) => ({ ...f, image_caption: e.target.value }))}
                     placeholder="Caption gambar (opsional)"
-                    className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none"
+                    className="field"
                   />
                 </div>
               </div>
 
               {/* Multi toggle */}
-              <div className="flex items-center gap-3">
-                <label className="text-xs font-medium text-gray-600">Multi-answer</label>
-                <button
-                  onClick={() => setForm((f) => ({ ...f, multi: !f.multi, answer: [] }))}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    form.multi ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                    form.multi ? 'translate-x-4' : 'translate-x-0.5'
-                  }`} />
-                </button>
-              </div>
+              <Toggle
+                checked={form.multi}
+                onChange={() => setForm((f) => ({ ...f, multi: !f.multi, answer: [] }))}
+                label="Multi-answer"
+                description="Soal dengan lebih dari satu jawaban benar"
+              />
 
               {/* Options */}
               <div>
-                <label className="mb-2 block text-xs font-medium text-gray-600">Pilihan Jawaban</label>
+                <label className="field-label">Pilihan Jawaban</label>
                 <div className="space-y-2">
                   {form.options.map((opt, i) => (
                     <div key={opt.label} className="flex items-start gap-3">
-                      <div className="flex items-center gap-1.5 pt-2">
+                      <label className="flex cursor-pointer items-center gap-1.5 pt-2.5">
                         <input
                           type={form.multi ? 'checkbox' : 'radio'}
                           checked={form.answer.includes(opt.label)}
                           onChange={() => toggleCorrectAnswer(opt.label)}
                           name="correct"
-                          className="accent-green-600"
+                          className="h-4 w-4 accent-emerald-600"
                         />
-                        <span className="text-sm font-semibold text-gray-600">{opt.label}</span>
-                      </div>
+                        <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                          {opt.label}
+                        </span>
+                      </label>
                       <input
                         value={opt.text}
                         onChange={(e) => {
@@ -314,45 +367,48 @@ export default function Editor() {
                           )
                           setForm((f) => ({ ...f, options }))
                         }}
-                        className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        className="field flex-1"
                       />
                     </div>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-gray-400">Centang/klik radio untuk menandai jawaban benar.</p>
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">
+                  Centang/klik radio untuk menandai jawaban benar.
+                </p>
               </div>
 
               {/* Explanation */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Penjelasan (opsional)</label>
+                <label className="field-label">Penjelasan (opsional)</label>
                 <textarea
                   value={form.explanation}
                   onChange={(e) => setForm((f) => ({ ...f, explanation: e.target.value }))}
                   rows={3}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="field"
                 />
               </div>
 
               {errors.length > 0 && (
-                <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                <div className="rounded-xl border border-rose-300 bg-rose-50 p-3.5 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                   {errors.map((e, i) => <p key={i}>{e}</p>)}
                 </div>
               )}
 
               {saveMsg && (
-                <div className={`rounded-lg p-3 text-sm ${
-                  saveMsg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
-                }`}>
+                <div
+                  className={`rounded-xl p-3.5 text-sm ${
+                    saveMsg.type === 'ok'
+                      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                      : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+                  }`}
+                >
                   {saveMsg.text}
                 </div>
               )}
 
-              <button
-                onClick={handleSave}
-                className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Simpan Soal
-              </button>
+              <Button size="lg" className="w-full" onClick={handleSave}>
+                <Save size={17} /> Simpan Soal
+              </Button>
             </div>
           )}
         </main>

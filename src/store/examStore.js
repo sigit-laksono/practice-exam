@@ -8,7 +8,7 @@ import { create } from 'zustand'
 export const useExamStore = create((set, get) => ({
   session: null,
 
-  startSession: ({ examCode, cert, questions, durationSeconds, questionNumberOffset = 0 }) => {
+  startSession: ({ examCode, cert, questions, durationSeconds, questionNumberOffset = 0, practiceMode = false }) => {
     const states = {}
     questions.forEach((q) => {
       states[q.id] = 'unanswered'
@@ -27,7 +27,21 @@ export const useExamStore = create((set, get) => ({
         submitted: false,
         result: null,
         questionNumberOffset, // nomor soal pertama di bank (0-indexed)
+        practiceMode,
+        revealed: new Set(), // id soal yang sudah ditampilkan feedback benar/salah (practice mode)
       },
+    })
+  },
+
+  // Kunci jawaban soal & tandai untuk ditampilkan feedback benar/salah (practice mode)
+  revealQuestion: (questionId) => {
+    set((s) => {
+      if (!s.session) return s
+      const hasAnswer = s.session.answers[questionId]?.length > 0
+      if (!hasAnswer || s.session.revealed.has(questionId)) return s
+      const revealed = new Set(s.session.revealed)
+      revealed.add(questionId)
+      return { session: { ...s.session, revealed } }
     })
   },
 

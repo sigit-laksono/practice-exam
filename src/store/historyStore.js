@@ -17,6 +17,10 @@ export const useHistoryStore = create(
         })
       },
 
+      // Hapus satu attempt. Pakai identitas objek karena entri lama bisa belum punya id.
+      removeAttempt: (attempt) =>
+        set((s) => ({ history: s.history.filter((h) => h !== attempt) })),
+
       clearHistory: () => set({ history: [] }),
     }),
     {

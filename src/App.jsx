@@ -6,6 +6,7 @@ import Result from './pages/Result'
 import Editor from './pages/Editor'
 import { useExamStore } from './store/examStore'
 import { useBankStore } from './store/bankStore'
+import { useUiStore } from './store/uiStore'
 import { autoLoadBanks } from './utils/autoLoader'
 
 function RequireSession({ children }) {
@@ -17,6 +18,12 @@ function RequireSession({ children }) {
 export default function App() {
   const importBank = useBankStore((s) => s.importBank)
   const banks = useBankStore((s) => s.banks)
+  const dark = useUiStore((s) => s.dark)
+
+  // Sinkronkan class dark (persisted store bisa berbeda dari tebakan awal inline script)
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark)
+  }, [dark])
 
   useEffect(() => {
     const existingCodes = Object.keys(banks)
