@@ -6,6 +6,14 @@
       "version": "V1.0",
       "file": "/banks/H12-811.json",
       "description": "HCIA-Datacom V1.0 — 445 Questions"
+    },
+
+    {
+      "exam_code": "H12-811-Rev",
+      "cert": "HCIA-Datacom-Rev",
+      "version": "V1.0",
+      "file": "/banks/H12-811_validated.json",
+      "description": "HCIA-Datacom V1.0 — 445 Questions"
     }
   ]
 }
