@@ -4,8 +4,10 @@ export default function OptionButton({ label, text, selected, multi, onChange, f
   // feedback: null (belum di-reveal) | 'correct' | 'incorrect' | 'missed'
   let cls =
     'group flex w-full items-start gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all focus-within:ring-2 focus-within:ring-indigo-500/50 '
-  let letterCls =
-    'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors '
+  // Kotak untuk multi-answer (checkbox), lingkaran untuk single answer (radio)
+  let letterCls = `flex h-7 w-7 flex-shrink-0 items-center justify-center ${
+    multi ? 'rounded-md' : 'rounded-full'
+  } text-xs font-bold transition-colors `
 
   if (feedback === 'correct') {
     cls += 'border-emerald-500/60 bg-emerald-50 text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200'
